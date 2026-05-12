@@ -1,7 +1,8 @@
 # AeroVLA: Vision-Language AI for Disaster Image Understanding
 
 ### All project related documents:
-- Detailed documentation - https://drive.google.com/file/d/1bKL752Mr5uliWQJ6HqFzIn82nINLlny1/view?usp=sharing
+- Detailed documentation (milestone 1) - https://drive.google.com/file/d/1bKL752Mr5uliWQJ6HqFzIn82nINLlny1/view?usp=sharing
+- Document after Preliminary results (milestone 1.2) - https://drive.google.com/file/d/1QpMnHva6zKykwdxEiuaizQgUOJdY28qe/view?usp=sharing
 - Final results of crisisMMD dataset - https://drive.google.com/file/d/1SRgp_w1EbnewGxCu8_iKT26seaOBiy3q/view?usp=sharing
 
 ## Overview
