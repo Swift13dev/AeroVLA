@@ -86,3 +86,41 @@ if __name__ == "__main__":
         print("="*40)
     except Exception as e:
         print(f"\n SETUP ERROR: {e}")
+
+class UniversalCrisisDataset(Dataset):
+    def __init__(self, root_dir, processor):
+        self.root_dir = os.path.expanduser(root_dir)
+        self.processor = processor
+        self.samples = []
+        
+        # All the categories we verified in your data_image folder
+        categories = [
+            'california_wildfires', 'hurricane_harvey', 'hurricane_irma', 
+            'hurricane_maria', 'iraq_iran_earthquake', 'mexico_earthquake', 'srilanka_floods'
+        ]
+
+        for cat in categories:
+            cat_path = os.path.join(self.root_dir, 'data_image', cat)
+            if os.path.exists(cat_path):
+                # This walks through every subfolder to find the .jpg files
+                for root, dirs, files in os.walk(cat_path):
+                    for file in files:
+                        if file.endswith(('.jpg', '.png', '.jpeg')):
+                            full_path = os.path.join(root, file)
+                            self.samples.append(full_path)
+        
+        print(f"SUCCESS: Dataset initialized with {len(self.samples)} total images.")
+
+    def __len__(self):
+        return len(self.samples)
+
+    def __getitem__(self, idx):
+        img_path = self.samples[idx]
+        try:
+            image = Image.open(img_path).convert("RGB") #
+            # Use SigLIP processor to prep the image
+            pixel_values = self.processor(images=image, return_tensors="pt").pixel_values
+            return pixel_values.squeeze(0), img_path
+        except Exception as e:
+            # If an image is broken, we skip it so the training doesn't crash
+            return torch.zeros(3, 224, 224), "ERROR_PATH"

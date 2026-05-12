@@ -1,8 +1,11 @@
+# Ignore data and weights
 data/
-data_image/
+models/*.pt
+outputs/*.csv
+results/
+
+# Ignore Python junk
 __pycache__/
-*.json
-*.tsv
-*.pt
-*.bin
-aerovla_env/
+*.pyc
+.ipynb_checkpoints/
+.env

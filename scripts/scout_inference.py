@@ -1,67 +1,256 @@
+import os
+import sys
 
 import torch
+import torch.nn.functional as F
+
 from PIL import Image
-from transformers import AutoProcessor, AutoModelForCausalLM, AutoTokenizer
-import os
+
+from transformers import (
+    AutoProcessor,
+    AutoModel,
+    AutoModelForCausalLM,
+    AutoTokenizer
+)
+
+# -------------------------------------------------
+# Local imports
+# -------------------------------------------------
+sys.path.append(
+    os.path.dirname(os.path.abspath(__file__))
+)
+
+import config
 from model_bridge import AeroVLA_Bridge
 
-def run_scout_report():
-    device = "cuda" if torch.cuda.is_available() else "cpu"
-    print(f"Initializing AeroVLA Dual-Stream System on {device}...")
 
-    # 1. Load Brain, Eyes, and the specific Brain Tokenizer
-    brain = AutoModelForCausalLM.from_pretrained("HuggingFaceTB/SmolLM2-135M-Instruct").to(device)
-    brain_tokenizer = AutoTokenizer.from_pretrained("HuggingFaceTB/SmolLM2-135M-Instruct")
-    vision_processor = AutoProcessor.from_pretrained("google/siglip-base-patch16-224")
-    bridge = AeroVLA_Bridge().to(device)
+class AeroVLA_Engine:
 
-    # 2. Image Selection
-    img_path = os.path.expanduser("~/AeroVLA/data/CrisisMMD/data_image/california_wildfires/10_10_2017/917791044158185473_0.jpg")
-    image = Image.open(img_path).convert("RGB")
+    def __init__(self):
 
-    # List of images to test
-    test_images = [
-        "california_wildfires/10_10_2017/917791044158185473_0.jpg",
-        "california_wildfires/10_10_2017/917791291823591425_1.jpg"
-    ]
-    
-    print("\n--- SELECT IMAGE FOR SCOUT RECON ---")
-    for i, path in enumerate(test_images):
-        print(f"[{i}] {path.split('/')[-1]}")
-    
-    choice = int(input("\nEnter image index [0 or 1]: "))
-    img_rel_path = test_images[choice]
-    
-    img_path = os.path.expanduser(f"~/AeroVLA/data/CrisisMMD/data_image/{img_rel_path}")
+        self.device = (
+            "cuda"
+            if torch.cuda.is_available()
+            else "cpu"
+        )
 
-    # 3. Prompt
-    prompt = "<|im_start|>system\nYou are a Disaster Response Scout Drone. Report findings.<|im_end|>\n<|im_start|>user\nAnalyze this wildfire image.<|im_end|>\n<|im_start|>assistant\n"
+        print(
+            f"\n Initializing AeroVLA Drone Intelligence on {self.device}...\n"
+        )
 
-    # 4. Processing (Split streams)
-    text_inputs = brain_tokenizer(prompt, return_tensors="pt").to(device)
-    vision_inputs = vision_processor(images=image, return_tensors="pt").to(device)
+        # -------------------------------------------------
+        # LANGUAGE MODEL
+        # -------------------------------------------------
+        self.brain = AutoModelForCausalLM.from_pretrained(
+            "HuggingFaceTB/SmolLM2-135M-Instruct"
+        ).to(self.device)
 
-    print("Drone is generating autonomous reasoning...")
-    
-    # 5. Generate
-    output = brain.generate(
-        input_ids=text_inputs.input_ids,
-        attention_mask=text_inputs.attention_mask,
-        max_new_tokens=40,
-        do_sample=True,
-        temperature=0.8,
-        repetition_penalty=1.5,
-        pad_token_id=brain_tokenizer.eos_token_id
+        self.brain_tokenizer = AutoTokenizer.from_pretrained(
+            "HuggingFaceTB/SmolLM2-135M-Instruct"
+        )
+
+        # -------------------------------------------------
+        # VISION MODEL
+        # -------------------------------------------------
+        self.vision_processor = AutoProcessor.from_pretrained(
+            "google/siglip-base-patch16-224"
+        )
+
+        self.vision_model = AutoModel.from_pretrained(
+            "google/siglip-base-patch16-224"
+        ).vision_model.to(self.device)
+
+        self.vision_model.eval()
+
+        # -------------------------------------------------
+        # BRIDGE
+        # -------------------------------------------------
+        self.bridge = AeroVLA_Bridge().to(self.device)
+
+        # -------------------------------------------------
+        # LOAD TRAINED WEIGHTS
+        # -------------------------------------------------
+        if os.path.exists(config.CHECKPOINT_PATH):
+
+            self.bridge.load_state_dict(
+                torch.load(
+                    config.CHECKPOINT_PATH,
+                    map_location=self.device
+                )
+            )
+
+            print(" Bridge Weights Loaded Successfully")
+
+        else:
+            print(" WARNING: No trained bridge weights found")
+
+        self.bridge.eval()
+
+    # =====================================================
+    # REPORT GENERATION
+    # =====================================================
+    def generate_report(self, image_path):
+
+        try:
+
+            # -------------------------------------------------
+            # LOAD IMAGE
+            # -------------------------------------------------
+            image = Image.open(image_path).convert("RGB")
+
+            # -------------------------------------------------
+            # PROCESS IMAGE
+            # -------------------------------------------------
+            vision_inputs = self.vision_processor(
+                images=image,
+                return_tensors="pt"
+            ).to(self.device)
+
+            # -------------------------------------------------
+            # EXTRACT SIGLIP FEATURES
+            # -------------------------------------------------
+            with torch.no_grad():
+
+                vision_outputs = self.vision_model(
+                    vision_inputs.pixel_values
+                )
+
+                vision_features = vision_outputs.pooler_output
+
+            # -------------------------------------------------
+            # BRIDGE PROJECTION
+            # -------------------------------------------------
+            with torch.no_grad():
+
+                visual_context = self.bridge(
+                    vision_features
+                )
+
+            # -------------------------------------------------
+            # NORMALIZE VISUAL EMBEDDINGS
+            # -------------------------------------------------
+            visual_context = F.normalize(
+                visual_context,
+                dim=-1
+            )
+
+            # Reduce visual dominance
+            visual_context = visual_context * 0.05
+
+            # -------------------------------------------------
+            # PROMPT
+            # -------------------------------------------------
+            prompt = config.PROMPT_TEMPLATE
+
+            text_inputs = self.brain_tokenizer(
+                prompt,
+                return_tensors="pt"
+            ).to(self.device)
+
+            # -------------------------------------------------
+            # TEXT EMBEDDINGS
+            # -------------------------------------------------
+            text_embeddings = self.brain.get_input_embeddings()(
+                text_inputs.input_ids
+            )
+
+            # -------------------------------------------------
+            # CREATE VISUAL TOKEN
+            # -------------------------------------------------
+            visual_token = visual_context.unsqueeze(1)
+
+            # Match dtype with LM embeddings
+            visual_token = visual_token.to(
+                text_embeddings.dtype
+            )
+
+            # -------------------------------------------------
+            # MERGE TEXT + VISUAL
+            # -------------------------------------------------
+            combined_embeddings = torch.cat(
+                [text_embeddings, visual_token],
+                dim=1
+            )
+
+            # -------------------------------------------------
+            # ATTENTION MASK
+            # -------------------------------------------------
+            visual_attention = torch.ones(
+                (1, 1),
+                dtype=torch.long,
+                device=self.device
+            )
+
+            combined_attention = torch.cat(
+                [
+                    text_inputs.attention_mask,
+                    visual_attention
+                ],
+                dim=1
+            )
+
+            # -------------------------------------------------
+            # GENERATE OUTPUT
+            # -------------------------------------------------
+            with torch.no_grad():
+
+                output = self.brain.generate(
+                    inputs_embeds=combined_embeddings,
+                    attention_mask=combined_attention,
+
+                    max_new_tokens=config.GEN_CONFIG[
+                        "max_new_tokens"
+                    ],
+
+                    repetition_penalty=config.GEN_CONFIG[
+                        "repetition_penalty"
+                    ],
+
+                    do_sample=config.GEN_CONFIG[
+                        "do_sample"
+                    ],
+
+                    pad_token_id=self.brain_tokenizer.eos_token_id,
+                    eos_token_id=self.brain_tokenizer.eos_token_id
+                )
+
+            # -------------------------------------------------
+            # DECODE OUTPUT
+            # -------------------------------------------------
+            report = self.brain_tokenizer.decode(
+                output[0],
+                skip_special_tokens=True
+            )
+
+            return report.strip()
+
+        except Exception as e:
+
+            return f"DRONE_SYSTEM_ERROR: {str(e)}"
+
+
+# =========================================================
+# TEST BLOCK
+# =========================================================
+if __name__ == "__main__":
+
+    engine = AeroVLA_Engine()
+
+    test_img = os.path.join(
+        config.DATASET_ROOT,
+        "california_wildfires/10_10_2017/917791044158185473_0.jpg"
     )
 
-    # 6. Decode using the CORRECT tokenizer
-    report = brain_tokenizer.decode(output[0], skip_special_tokens=True)
-    
-    print("\n" + "="*30)
-    print("EROVLA MISSION LOG")
-    print("="*30)
-    print(f"REPORT: {report.split('assistant')[-1].strip()}")
-    print("="*30)
+    if os.path.exists(test_img):
 
-if __name__ == "__main__":
-    run_scout_report()
+        print("\n--- DRONE RECON TEST ---\n")
+
+        report = engine.generate_report(test_img)
+
+        print(f"REPORT:\n{report}")
+
+    else:
+
+        print(
+            f" Test image not found:\n{test_img}"
+        )

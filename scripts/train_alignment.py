@@ -1,61 +1,175 @@
+import os
 import torch
 import torch.nn as nn
 import torch.optim as optim
+
 from torch.utils.data import DataLoader
-from transformers import AutoProcessor
-# Importing your custom data loader and bridge
+
+from transformers import AutoProcessor, AutoModel
+
 from data_loader import CrisisDataset
 from model_bridge import AeroVLA_Bridge
-import os
+
 
 def train_alignment():
+
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print(f"Phase 2: Starting Alignment Training on {device}")
 
-    # 1. Load the "Eyes" (Processor) and the "Bridge"
-    processor = AutoProcessor.from_pretrained("google/siglip-base-patch16-224")
-    model = AeroVLA_Bridge().to(device)
-    
-    # 2. Use the REAL TSV and Image Directory
-    tsv = os.path.expanduser("~/AeroVLA/data/CrisisMMD/files_individual_events/california_wildfires_final_data.tsv")
-    img_dir = os.path.expanduser("~/AeroVLA/data/CrisisMMD")
-    
-    dataset = CrisisDataset(tsv, img_dir, processor)
-    # Batch size 8 is a good "sweet spot" for the DGX
-    loader = DataLoader(dataset, batch_size=8, shuffle=True)
+    print(f"\n Starting AeroVLA Alignment Training on {device}\n")
 
-    # 3. Training Config (Only training the Projector)
-    optimizer = optim.Adam(model.projector.parameters(), lr=5e-5)
-    # CrossEntropy is used because we are now "Classifying" real labels
+    # ---------------------------------------------------
+    # 1. Load SigLIP Vision Encoder
+    # ---------------------------------------------------
+    processor = AutoProcessor.from_pretrained(
+        "google/siglip-base-patch16-224"
+    )
+
+    vision_model = AutoModel.from_pretrained(
+        "google/siglip-base-patch16-224"
+    ).vision_model.to(device)
+
+    # Freeze SigLIP weights
+    for param in vision_model.parameters():
+        param.requires_grad = False
+
+    vision_model.eval()
+
+    # ---------------------------------------------------
+    # 2. Load Bridge
+    # ---------------------------------------------------
+    bridge = AeroVLA_Bridge().to(device)
+
+    # ---------------------------------------------------
+    # 3. Dataset
+    # ---------------------------------------------------
+    tsv = os.path.expanduser(
+        "~/AeroVLA/data/CrisisMMD/files_individual_events/california_wildfires_final_data.tsv"
+    )
+
+    img_dir = os.path.expanduser(
+        "~/AeroVLA/data/CrisisMMD"
+    )
+
+    dataset = CrisisDataset(
+        tsv,
+        img_dir,
+        processor
+    )
+
+    loader = DataLoader(
+        dataset,
+        batch_size=8,
+        shuffle=True
+    )
+
+    # ---------------------------------------------------
+    # 4. Training Setup
+    # ---------------------------------------------------
+    optimizer = optim.Adam(
+        bridge.parameters(),
+        lr=5e-5
+    )
+
+    num_classes = len(dataset.label_to_id)
+
+    classifier = nn.Linear(576, num_classes).to(device)
+
     criterion = nn.CrossEntropyLoss()
 
-    print("enginning Real-Label Alignment...")
-    
-    model.train()
-    for epoch in range(5): # 5 Epochs for a solid initial run
-        running_loss = 0.0
-        for i, (images, labels) in enumerate(loader):
-            images, labels = images.to(device), labels.to(device)
-            
-            # Flatten images for the projector [Batch, 3*224*224] -> [Batch, 768]
-            # (Note: In a full VLA we use the Vision Encoder, here we test the Bridge)
-            vision_features = images.view(images.size(0), -1)[:, :768]
-            
-            optimizer.zero_grad()
-            outputs = model.projector(vision_features)
-            
-            # We map the 2048 output back to our number of labels for the loss
-            # This teaches the bridge to 'cluster' similar disaster images
-            loss = criterion(outputs[:, :len(dataset.label_map)], labels)
-            
-            loss.backward()
-            optimizer.step()
-            running_loss += loss.item()
-            
-            if i % 10 == 0:
-                print(f"Epoch [{epoch+1}/5], Step [{i}], Loss: {loss.item():.4f}")
+    # ---------------------------------------------------
+    # 5. Training Loop
+    # ---------------------------------------------------
+    bridge.train()
+    classifier.train()
 
-    print("SUCCESS: Phase 2 Alignment Complete. The Bridge is now 'Crisis-Aware'.")
+    for epoch in range(5):
+
+        running_loss = 0.0
+
+        for i, batch in enumerate(loader):
+
+            images, labels, instructions = batch
+
+            images = images.to(device)
+            labels = labels.to(device)
+
+            # --------------------------------------------
+            # Extract REAL semantic features using SigLIP
+            # --------------------------------------------
+            with torch.no_grad():
+
+                vision_outputs = vision_model(images)
+
+                vision_features = vision_outputs.pooler_output
+
+            # --------------------------------------------
+            # Bridge Projection
+            # --------------------------------------------
+            projected_features = bridge(
+                vision_features
+            )
+
+            # --------------------------------------------
+            # Classification Head
+            # --------------------------------------------
+            logits = classifier(
+                projected_features
+            )
+
+            # --------------------------------------------
+            # Loss
+            # --------------------------------------------
+            loss = criterion(
+                logits,
+                labels
+            )
+
+            optimizer.zero_grad()
+
+            loss.backward()
+
+            optimizer.step()
+
+            running_loss += loss.item()
+
+            # --------------------------------------------
+            # Logs
+            # --------------------------------------------
+            if i % 10 == 0:
+
+                print(
+                    f"Epoch [{epoch+1}/5] "
+                    f"Step [{i}] "
+                    f"Loss: {loss.item():.4f}"
+                )
+
+        avg_loss = running_loss / len(loader)
+
+        print(
+            f"\n Epoch {epoch+1} Complete "
+            f"| Average Loss: {avg_loss:.4f}\n"
+        )
+
+    # ---------------------------------------------------
+    # 6. Save Bridge
+    # ---------------------------------------------------
+    os.makedirs(
+        os.path.expanduser("~/AeroVLA/models"),
+        exist_ok=True
+    )
+
+    checkpoint_path = os.path.expanduser(
+        "~/AeroVLA/models/universal_bridge.pt"
+    )
+
+    torch.save(
+        bridge.state_dict(),
+        checkpoint_path
+    )
+
+    print("\n SUCCESS: AeroVLA Bridge Training Complete")
+    print(f" Saved Bridge Weights: {checkpoint_path}")
+
 
 if __name__ == "__main__":
     train_alignment()
