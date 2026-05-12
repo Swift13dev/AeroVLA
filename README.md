@@ -1,5 +1,9 @@
 # AeroVLA: Vision-Language AI for Disaster Image Understanding
 
+### All project related documents:
+- Detailed documentation - https://drive.google.com/file/d/1bKL752Mr5uliWQJ6HqFzIn82nINLlny1/view?usp=sharing
+- Final results of crisisMMD dataset - https://drive.google.com/file/d/1SRgp_w1EbnewGxCu8_iKT26seaOBiy3q/view?usp=sharing
+
 ## Overview
 
 AeroVLA is a multimodal AI system designed to analyze disaster images and generate human-readable situation reports. The goal is to reduce the gap between image collection and decision-making in emergency scenarios.
@@ -108,3 +112,10 @@ pip install torch transformers huggingface_hub pillow pandas sentencepiece proto
 - Domain research note
 - Data pipeline working
 - Initial model running with results
+
+### Milestone 1.2 — Multimodal Integration & Batch Evaluation
+- Architecture Evolution: Successfully transitioned from a text-only prompt generator to a True Vision-Language Pipeline using inputs_embeds injection.
+- Visual Grounding: Implemented the AeroVLA Bridge (MLP Projector) to map SigLIP visual features (768D) into the SmolLM2 language space (576D).
+- Prompt Engineering: Developed a Structured Reconnaissance Template to eliminate hallucinations and force deterministic, factual drone observations.
+- Batch Processing: Successfully executed inference on 105+ images across 7 disaster categories (Wildfires, Floods, Earthquakes, Hurricanes).
+- Data Integrity: Established a clean output pipeline, generating structured CSV reports for large-scale disaster scene analysis.
