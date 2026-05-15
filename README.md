@@ -190,7 +190,7 @@ scaling experiment
 Full 6471-image VisDrone dataset
 production training
 
-Final loss achieved:
+#### Final loss achieved:
 #### 0.000013
 
 ## Deployment
