@@ -1,38 +1,125 @@
-# AeroVLA: Vision-Language AI for Disaster Image Understanding
+# AeroVLA: Autonomous Vision-Language Intelligence for Aerial Scene Understanding
 
 ### All project related documents:
-- Detailed documentation (milestone 1) - https://drive.google.com/file/d/1bKL752Mr5uliWQJ6HqFzIn82nINLlny1/view?usp=sharing
-- Document after Preliminary results (milestone 1.2) - https://drive.google.com/file/d/1QpMnHva6zKykwdxEiuaizQgUOJdY28qe/view?usp=sharing
-- Final results of crisisMMD dataset - https://drive.google.com/file/d/1SRgp_w1EbnewGxCu8_iKT26seaOBiy3q/view?usp=sharing
+- Milestone 1: https://drive.google.com/file/d/1bKL752Mr5uliWQJ6HqFzIn82nINLlny1/view?usp=sharing
+- Milestone 1.2: https://drive.google.com/file/d/1QpMnHva6zKykwdxEiuaizQgUOJdY28qe/view?usp=sharing
+- Milestone 2: https://drive.google.com/file/d/1BL1pjfrNh8rBrSTng5g_PAzDDCZJQEz5/view?usp=sharing
+- Demo Link: https://drive.google.com/file/d/1CcUJ7NE5BBEs09e8NblzlVQW4YW0S70n/view?usp=sharing
+- Presentation link: https://canva.link/xw2vq1q0aw5np7f
 
 ## Overview
 
-AeroVLA is a multimodal AI system designed to analyze disaster images and generate human-readable situation reports. The goal is to reduce the gap between image collection and decision-making in emergency scenarios.
+AeroVLA is a multimodal Vision-Language AI system designed for semantic aerial scene understanding using drone and aerial imagery.
 
-The system combines computer vision and natural language processing using a custom bridge module that connects visual features to a language model.
+The project evolved from disaster-image interpretation into a fully operational semantic aerial intelligence platform capable of:
 
-## Problem Statement
+- extracting visual embeddings,
+- aligning visual and language spaces,
+- performing semantic scene understanding,
+- generating interpretable aerial intelligence outputs,
+- and deploying the system through an interactive real-time web interface.
 
-During disasters, large amounts of visual data are generated through drones, cameras, and satellites. However, understanding these images still requires manual analysis, which is slow and not scalable.
+AeroVLA combines modern Vision-Language Models (VLMs), semantic retrieval systems, and interactive deployment pipelines to create a lightweight autonomous aerial intelligence framework.
 
-There is a need for an AI system that can automatically:
+## Research Objective
 
-* Understand disaster scenes
-* Interpret visual conditions
-* Generate meaningful reports
-* Solution Approach
+The core objective of AeroVLA is to bridge the gap between:
 
-AeroVLA uses a Vision-Language pipeline:
+Visual Perception ↔ Language Understanding
 
-Image → Vision Encoder → Bridge Module → Language Model → Report
+using a custom neural alignment architecture.
 
-* Vision Encoder (SIGLIP): Extracts features from images
-* Bridge Module (Custom): Aligns vision features with language space
-* Language Model (SmolLM2): Generates textual reports
+The system aims to:
+
+- understand aerial environments,
+- interpret semantic spatial patterns,
+- analyze drone imagery,
+- reduce manual aerial scene interpretation,
+- and enable real-time AI-assisted reconnaissance.
+
+## Evolution of AeroVLA
+
+### Milestone 1 — Disaster Image Understanding
+
+Initial development focused on:
+
+- CrisisMMD disaster dataset,
+- SIGLIP visual encoder,
+- SmolLM2 language model,
+- disaster report generation,
+- multimodal embedding alignment.
+
+The system generated reconnaissance-style disaster reports from unseen images.
+
+### Milestone 1.2 — Vision-Language Alignment
+
+Major architectural upgrades included:
+
+- True Vision-Language Pipeline
+- inputs_embeds integration
+- AeroVLA Neural Bridge
+- Structured reconnaissance prompting
+- Batch inference over 100+ disaster images
+- CSV-based output logging
+
+### Milestone 2 — Semantic Aerial Intelligence
+
+The project transitioned into:
+
+Semantic Retrieval Intelligence
+
+using:
+
+- CLIP ViT-B/32
+- VisDrone aerial dataset
+- semantic similarity retrieval
+- Mahindra University validation data
+- Streamlit deployment dashboard
+
+This milestone established AeroVLA as a complete end-to-end aerial semantic intelligence platform.
+
+## Core Architecture
+
+AeroVLA follows the pipeline:
+
+Image → Vision Encoder → Neural Bridge → Semantic Retrieval → Interactive Deployment
+
+## Models Used
+
+### Vision Models
+#### SIGLIP
+
+Used during Milestone 1 for disaster understanding tasks.
+
+#### CLIP ViT-B/32
+
+Used during Milestone 2 for semantic aerial retrieval and zero-shot classification.
+
+### Language Model
+#### SmolLM2-135M
+
+Used for semantic grounding and early generative experimentation.
+
+## Neural Bridge Architecture
+
+A custom MLP projection module was developed to align:
+
+CLIP visual embeddings (768D)
+SmolLM language embeddings (576D)
+
+Architecture:
+
+``` Python
+nn.Linear(768, 1024)
+nn.GELU()
+nn.Linear(1024, 576)
+``` 
+
+This bridge became the core innovation layer of AeroVLA.
 
 ## Dataset
 
-For Milestone 1, the CrisisMMD dataset was used.
+### CrisisMMD
 
 - CrisisMMD official dataset (version v2.0): https://crisisnlp.qcri.org/crisismmd
 - CrisisMMD tar.gz file: https://crisisnlp.qcri.org/data/crisismmd/CrisisMMD_v2.0.tar.gz
@@ -42,81 +129,171 @@ Contains real disaster images (wildfires, floods, etc.)
 Includes metadata and annotations
 Used for training and testing
 
-### Future work will include:
+### VisDrone2019-DET
 
-* VisDrone
-* DOTA (aerial datasets)
+- Offical dataset (DET version): https://github.com/VisDrone/VisDrone-Dataset
+- Hugging face link: https://huggingface.co/datasets/Voxel51/VisDrone2019-DET
 
-## Work Completed
-* Environment setup and dependency installation
-* Dataset download and structure verification
-* Metadata exploration and preprocessing
-* Custom data loader implementation (CrisisDataset)
-* Model integration (SIGLIP + SmolLM2)
-* Custom bridge module development
-* Training pipeline implemented (train_alignment.py)
-* Loss decreased across epochs (learning confirmed)
-* Inference pipeline created (scout_inference.py)
-* Generated disaster reports from unseen images
+### Mahindra University Validation Dataset
 
-## Results
-* End-to-end pipeline is functional
-* Model successfully generates disaster reports from images
-* Training loss decreased, indicating learning
-* Output quality improved after debugging and prompt tuning
-  
-## Challenges
-Dataset path and schema mismatches
-Missing dependencies
-Tokenizer conflicts
-Weak initial outputs
+A custom real-world validation dataset was manually collected from Mahindra University campus.
 
-All issues were resolved through iterative debugging and improvements.
+## Major Technical Contributions
+### Vision-Language Embedding Alignment
 
-## Future Scope
-* Use aerial datasets (VisDrone, DOTA)
-* Real-time drone integration
-* Video-based disaster analysis
-* Improved language generation
-* Web-based deployment
+Implemented a trainable neural bridge between vision-space and language-space.
+
+## Semantic Retrieval System
+
+Transitioned from unstable language generation into:
+
+Zero-Shot Semantic Retrieval Intelligence
+
+using cosine similarity between:
+
+- image embeddings,
+- semantic label embeddings.
+
+## Hallucination Analysis
+
+A major research finding of AeroVLA was discovering that:
+
+Low training loss ≠ reliable grounded generation
+
+This led to the architectural pivot toward semantic retrieval systems.
+
+## Interactive Evaluation Framework
+
+The Streamlit deployment includes:
+
+- live semantic inference,
+- confidence visualization,
+- human-in-the-loop evaluation,
+- real-time validation metrics,
+- interactive benchmarking.
+
+## Training Pipeline
+
+Training progression:
+
+### Phase 1
+500 images
+5 epochs
+smoke testing
+
+### Phase 2
+2000 images
+10 epochs
+scaling experiment
+
+### Phase 3
+Full 6471-image VisDrone dataset
+production training
+
+Final loss achieved:
+#### 0.000013
+
+## Deployment
+
+AeroVLA was deployed through a Streamlit-based dashboard called:
+
+### AeroVLA Mission Control
+
+Features:
+
+- image upload interface,
+- semantic intelligence panel,
+- top semantic matches,
+- confidence visualization,
+- technical architecture display,
+- live evaluation metrics.
+
+### Evaluation Metrics
+
+The deployment system supports:
+
+- Accuracy
+- Confidence Scores
+- Correct Predictions
+- Incorrect Predictions
+- Evaluated Samples
+
+through interactive human validation.
+
+### Sample Semantic Outputs
+
+Examples successfully recognized:
+
+- vehicles parked
+- building entrance
+- sports field
+- trees and vegetation
+- recreational area
+- parking area
 
 ## Technologies Used
-* Python
-* PyTorch
-* Hugging Face Transformers
-* SIGLIP (Vision Model)
-* SmolLM2 (Language Model)
-* Pandas, PIL
-* Status
+- Python
+- PyTorch
+- Hugging Face Transformers
+- Streamlit
+- CLIP
+- SIGLIP
+- SmolLM2
+- PIL
+- Pandas
+- NumPy
 
-## Dependencies
+## Major Debugging Challenges Solved
+- Matrix dimension mismatches
+- Float32 vs BFloat16 conflicts
+- CLIP pooling extraction errors
+- Streamlit deployment issues
+- Tensor casting failures
+- Hallucinated generation outputs
+- Remote DGX execution issues
+- Git synchronization and backup safety
+  
+## Deployment Demonstration
 
-The following libraries were used in this project:
+A live deployment demonstration video is available here:
 
-- torch  
-- transformers  
-- huggingface_hub  
-- pillow (PIL)  
-- pandas  
-- sentencepiece  
-- protobuf  
-- numpy  
+- https://drive.google.com/file/d/1CcUJ7NE5BBEs09e8NblzlVQW4YW0S70n/view?usp=sharing
 
-Install all dependencies using:
+The demo showcases:
 
-```bash
-pip install torch transformers huggingface_hub pillow pandas sentencepiece protobuf numpy
-```
+- semantic inference,
+- confidence retrieval,
+- live evaluation,
+- MU campus testing,
+- and deployment workflow.
 
-### Milestone 1 Completed
+## Current Capabilities
 
-- Domain research note
-- Data pipeline working
-- Initial model running with results
+AeroVLA currently supports:
 
-### Milestone 1.2 — Multimodal Integration & Batch Evaluation
-- Architecture Evolution: Successfully transitioned from a text-only prompt generator to a True Vision-Language Pipeline using inputs_embeds injection.
-- Visual Grounding: Implemented the AeroVLA Bridge (MLP Projector) to map SigLIP visual features (768D) into the SmolLM2 language space (576D).
-- Prompt Engineering: Developed a Structured Reconnaissance Template to eliminate hallucinations and force deterministic, factual drone observations.
-- Batch Processing: Successfully executed inference on 105+ images across 7 disaster categories (Wildfires, Floods, Earthquakes, Hurricanes).
-- Data Integrity: Established a clean output pipeline, generating structured CSV reports for large-scale disaster scene analysis.
+- Vision-language alignment
+- Semantic aerial scene understanding
+- Zero-shot semantic retrieval
+- Interactive deployment
+- Real-world validation
+- Human-in-the-loop evaluation
+- DGX remote execution
+  
+## Future Scope (Milestone 3)
+
+Future planned integrations include:
+
+- MiDaS / ZoeDepth
+- YOLO object detection
+- Real-time drone streams
+- Temporal memory systems
+- Multi-frame reasoning
+- Video intelligence
+- Autonomous navigation reasoning
+- Advanced VLM integration
+- Public cloud deployment
+
+## Project Status
+Milestone 2 — COMPLETED
+
+AeroVLA has successfully evolved into a functioning autonomous semantic aerial intelligence platform.
