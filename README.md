@@ -7,6 +7,20 @@
 - Demo Link: https://drive.google.com/file/d/1CcUJ7NE5BBEs09e8NblzlVQW4YW0S70n/view?usp=sharing
 - Presentation link: https://canva.link/xw2vq1q0aw5np7f
 
+## Table of Contents
+1. Overview
+2. Research objective
+3. Project repository structure
+4. Evaluation of AeroVLA
+5. Core architecture
+6. Datasets used
+7. Major technical contributions
+8. Training pipeline
+9. Deployment
+10. Technologies used
+11. Debugging
+12. Future scope
+
 ## Overview
 
 AeroVLA is a multimodal Vision-Language AI system designed for semantic aerial scene understanding using drone and aerial imagery.
@@ -36,6 +50,156 @@ The system aims to:
 - analyze drone imagery,
 - reduce manual aerial scene interpretation,
 - and enable real-time AI-assisted reconnaissance.
+
+## Project Repository Structure
+
+The AeroVLA repository is divided into two major development phases:
+
+### 1. CrisisMMD Research Pipeline 
+``` (scripts/)```
+
+The scripts/ folder contains the original AeroVLA multimodal disaster-intelligence pipeline developed during Milestone 1 and Milestone 1.2.
+
+This phase focused on:
+
+- disaster image understanding,
+- vision-language alignment,
+- report generation,
+- multimodal grounding.
+
+### Important Scripts (CrisisMMD)
+#### train_alignment.py
+
+Core training pipeline for multimodal embedding alignment between:
+
+- SIGLIP visual encoder
+- SmolLM2 language model
+
+Responsible for:
+
+- feature alignment,
+- bridge training,
+- loss optimization.
+
+#### model_bridge.py
+
+Implements the AeroVLA Neural Bridge.
+
+Architecture:
+```
+768D Vision Embeddings
+→ MLP Projection
+→ 576D Language Space
+``` 
+This became the core innovation layer of AeroVLA.
+
+#### data_loader.py
+
+Custom CrisisMMD dataset loader.
+
+Handles:
+
+- image loading,
+- metadata parsing,
+- preprocessing,
+- batching.
+
+#### scout_inference.py
+
+Inference pipeline for generating disaster reconnaissance reports from unseen images.
+
+#### batch_inference.py
+
+Runs inference over large batches of disaster images and generates structured CSV outputs.
+
+#### global_predictions.py
+
+Stores and manages generated inference outputs during batch evaluation.
+
+#### verify_universal.py
+
+Validation and debugging utility for verifying universal report generation logic.
+
+#### train_phase2.py
+
+Extended alignment experiments and instruction tuning logic.
+
+### 2. Semantic Aerial Intelligence Pipeline (Root Directory)
+
+The root-level files represent the transition into:
+
+AeroVLA Phase 2 — Semantic Aerial Intelligence
+
+This phase focused on:
+
+- aerial scene understanding,
+- semantic retrieval,
+- VisDrone learning,
+- Streamlit deployment,
+- live evaluation.
+
+### Important Scripts (VisDrone + Deployment)
+#### clip_integration.py
+
+Integrates:
+
+- CLIP ViT-B/32
+- semantic embedding extraction
+- cosine similarity retrieval
+
+This script established the semantic retrieval pipeline used in final deployment.
+
+#### train_bridge.py
+
+Trains the AeroVLA bridge on VisDrone aerial data.
+
+Training progression:
+
+- 500 image smoke test
+- 2000 image scaling
+- full 6471-image production training
+- Final loss achieved: 0.000013
+
+#### explore_visdrone.py
+
+Dataset inspection and annotation exploration utility.
+
+Used to:
+
+- analyze VisDrone label structures,
+- inspect aerial metadata,
+- debug annotation parsing.
+- visdrone_captioner.py
+
+Experimental semantic caption generation module for aerial imagery.
+
+#### inference_test.py
+
+Primary semantic inference testing script.
+
+Performs:
+
+- image embedding extraction,
+- semantic matching,
+- confidence scoring,
+- MU validation testing.
+- app.py
+
+#### Final Streamlit deployment dashboard.
+
+Features:
+
+- image upload,
+- semantic scene understanding,
+- confidence visualization,
+- live evaluation metrics,
+- human-in-the-loop validation.
+
+This represents the final AeroVLA deployment interface.
+
+#### aerovla_bridge.py
+
+Final production-ready AeroVLA Neural Bridge implementation used during VisDrone semantic training.
 
 ## Evolution of AeroVLA
 
