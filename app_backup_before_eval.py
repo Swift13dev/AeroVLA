@@ -13,18 +13,6 @@ st.set_page_config(
 )
 
 # ---------------------------------------------------
-# SESSION STATE METRICS
-# ---------------------------------------------------
-if "total_predictions" not in st.session_state:
-    st.session_state.total_predictions = 0
-
-if "correct_predictions" not in st.session_state:
-    st.session_state.correct_predictions = 0
-
-if "incorrect_predictions" not in st.session_state:
-    st.session_state.incorrect_predictions = 0
-
-# ---------------------------------------------------
 # SEMANTIC LABELS
 # ---------------------------------------------------
 semantic_labels = [
@@ -48,17 +36,16 @@ semantic_labels = [
 @st.cache_resource
 def load_models():
 
-    device = "cpu"
-
+    # Load CLIP
     clip_model = CLIPModel.from_pretrained(
         "openai/clip-vit-base-patch32"
-    ).to(device).float()
+    ).float()
 
     processor = CLIPProcessor.from_pretrained(
         "openai/clip-vit-base-patch32"
     )
 
-    # AeroVLA Bridge
+    # Load AeroVLA Bridge
     bridge = AeroVLABridge().float()
 
     bridge.load_state_dict(
@@ -127,9 +114,9 @@ with col2:
 
         with st.spinner("Analyzing aerial environment..."):
 
-            # ---------------------------------------------------
-            # PROCESS IMAGE
-            # ---------------------------------------------------
+            # -----------------------------------------
+            # IMAGE PROCESSING
+            # -----------------------------------------
             image_inputs = processor(
                 images=image,
                 return_tensors="pt"
@@ -156,7 +143,7 @@ with col2:
 
                 image_features = image_features.float()
 
-                # NORMALIZE
+                # NORMALIZATION
                 image_features = image_features / image_features.norm(
                     dim=-1,
                     keepdim=True
@@ -187,7 +174,7 @@ with col2:
 
                 text_features = text_features.float()
 
-                # NORMALIZE
+                # NORMALIZATION
                 text_features = text_features / text_features.norm(
                     dim=-1,
                     keepdim=True
@@ -203,11 +190,10 @@ with col2:
                 values, indices = similarity[0].topk(3)
 
         # ---------------------------------------------------
-        # DISPLAY RESULTS
+        # RESULTS DISPLAY
         # ---------------------------------------------------
         st.success("Aerial analysis completed successfully")
 
-        # PRIMARY LABEL
         top_label = semantic_labels[
             indices[0].item()
         ]
@@ -218,9 +204,6 @@ with col2:
 
         st.divider()
 
-        # ---------------------------------------------------
-        # TOP MATCHES
-        # ---------------------------------------------------
         st.write("### Top Semantic Matches")
 
         for i in range(3):
@@ -231,104 +214,10 @@ with col2:
 
             confidence = values[i].item()
 
-            st.progress(float(confidence))
+            st.progress(confidence)
 
             st.caption(
                 f"{label_name} → {confidence * 100:.2f}% confidence"
-            )
-
-        st.divider()
-
-        # ---------------------------------------------------
-        # GROUND TRUTH VALIDATION
-        # ---------------------------------------------------
-        st.subheader("Ground Truth Validation")
-
-        ground_truth = st.selectbox(
-            "Select Actual Scene Label",
-            semantic_labels
-        )
-
-        # ---------------------------------------------------
-        # EVALUATION BUTTON
-        # ---------------------------------------------------
-        if st.button("Evaluate Prediction"):
-
-            st.session_state.total_predictions += 1
-
-            # CORRECT
-            if ground_truth == top_label:
-
-                st.session_state.correct_predictions += 1
-
-                st.success(
-                    "✅ Correct Prediction"
-                )
-
-            # INCORRECT
-            else:
-
-                st.session_state.incorrect_predictions += 1
-
-                st.error(
-                    "❌ Incorrect Prediction"
-                )
-
-        # ---------------------------------------------------
-        # LIVE METRICS
-        # ---------------------------------------------------
-        st.divider()
-
-        st.subheader("Live Evaluation Metrics")
-
-        total = st.session_state.total_predictions
-
-        if total > 0:
-
-            # =====================================
-            # ACCURACY
-            # =====================================
-            accuracy = (
-                st.session_state.correct_predictions / total
-            ) * 100
-
-            # =====================================
-            # CONFIDENCE
-            # =====================================
-            confidence = values[0].item() * 100
-
-            # =====================================
-            # DISPLAY METRICS
-            # =====================================
-            metric1, metric2, metric3, metric4 = st.columns(4)
-
-            with metric1:
-                st.metric(
-                    "Accuracy",
-                    f"{accuracy:.2f}%"
-                )
-
-            with metric2:
-                st.metric(
-                    "Confidence",
-                    f"{confidence:.2f}%"
-                )
-
-            with metric3:
-                st.metric(
-                    "Correct Predictions",
-                    st.session_state.correct_predictions
-                )
-
-            with metric4:
-                st.metric(
-                    "Incorrect Predictions",
-                    st.session_state.incorrect_predictions
-                )
-
-            st.metric(
-                "Evaluated Samples",
-                total
             )
 
         # ---------------------------------------------------
@@ -338,20 +227,16 @@ with col2:
 
             st.markdown("""
             ### AeroVLA Pipeline
-
+            
             - CLIP ViT-B/32 Vision Encoder
             - Semantic Embedding Extraction
             - Cosine Similarity Retrieval
             - AeroVLA Projection Bridge
             - Mahindra University Validation Dataset
-
+            
             ### Current Mode
-
+            
             Stable semantic retrieval inference.
-
-            ### Evaluation Mode
-
-            Interactive Human-in-the-Loop Validation
             """)
 
     else:
